@@ -2,7 +2,7 @@
 
 <head>
 <title>Particles</title>
-<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta charset="utf-8">
 
 
 <script id="shader-fs" type="x-shader/x-fragment">
@@ -62,8 +62,6 @@
   function initGL(canvas) {
     try {
       gl = canvas.getContext("experimental-webgl");
-      gl.viewportWidth = canvas.width;
-      gl.viewportHeight = canvas.height;
     } catch(e) {
     }
     if (!gl) {
@@ -89,18 +87,18 @@
 
     var shader;
     if (shaderScript.type == "x-shader/x-fragment") {
-      shader = gl.createShader(gl.FRAGMENT_SHADER);
+      shader = { id: gl.createShader(gl.FRAGMENT_SHADER) };
     } else if (shaderScript.type == "x-shader/x-vertex") {
-      shader = gl.createShader(gl.VERTEX_SHADER);
+      shader = { id: gl.createShader(gl.VERTEX_SHADER) };
     } else {
       return null;
     }
 
-    gl.shaderSource(shader, str);
-    gl.compileShader(shader);
+    gl.shaderSource(shader.id, str);
+    gl.compileShader(shader.id);
 
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      alert(gl.getShaderInfoLog(shader));
+    if (!gl.getShaderParameter(shader.id, gl.COMPILE_STATUS)) {
+      alert(gl.getShaderInfoLog(shader.id));
       return null;
     }
 
@@ -113,42 +111,42 @@
     var fragmentShader = getShader(gl, "shader-fs");
     var vertexShader = getShader(gl, "shader-vs");
 
-    shaderProgram = gl.createProgram();
-    gl.attachShader(shaderProgram, vertexShader);
-    gl.attachShader(shaderProgram, fragmentShader);
-    gl.linkProgram(shaderProgram);
+    shaderProgram = { id: gl.createProgram() };
+    gl.attachShader(shaderProgram.id, vertexShader.id);
+    gl.attachShader(shaderProgram.id, fragmentShader.id);
+    gl.linkProgram(shaderProgram.id);
 
-    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+    if (!gl.getProgramParameter(shaderProgram.id, gl.LINK_STATUS)) {
       alert("Could not initialise shaders");
     }
 
-    gl.useProgram(shaderProgram);
+    gl.useProgram(shaderProgram.id);
 
-    shaderProgram.pointLifetimeAttribute = gl.getAttribLocation(shaderProgram, "aLifetime");
+    shaderProgram.pointLifetimeAttribute = gl.getAttribLocation(shaderProgram.id, "aLifetime");
     gl.enableVertexAttribArray(shaderProgram.pointLifetimeAttribute);
 
-    shaderProgram.pointStartPositionAttribute = gl.getAttribLocation(shaderProgram, "aStartPosition");
+    shaderProgram.pointStartPositionAttribute = gl.getAttribLocation(shaderProgram.id, "aStartPosition");
     gl.enableVertexAttribArray(shaderProgram.pointStartPositionAttribute);
 
-    shaderProgram.pointEndPositionAttribute = gl.getAttribLocation(shaderProgram, "aEndPosition");
+    shaderProgram.pointEndPositionAttribute = gl.getAttribLocation(shaderProgram.id, "aEndPosition");
     gl.enableVertexAttribArray(shaderProgram.pointEndPositionAttribute);
 
-    shaderProgram.pointOffsetAttribute = gl.getAttribLocation(shaderProgram, "aOffset");
+    shaderProgram.pointOffsetAttribute = gl.getAttribLocation(shaderProgram.id, "aOffset");
     gl.enableVertexAttribArray(shaderProgram.pointOffsetAttribute);
 
-    shaderProgram.pointTextureCoordsAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoords");
+    shaderProgram.pointTextureCoordsAttribute = gl.getAttribLocation(shaderProgram.id, "aTextureCoords");
     gl.enableVertexAttribArray(shaderProgram.pointTextureCoordsAttribute);
 
-    shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "sTexture");
-    shaderProgram.centerPositionUniform = gl.getUniformLocation(shaderProgram, "uCenterPosition");
-    shaderProgram.colorUniform = gl.getUniformLocation(shaderProgram, "uColor");
-    shaderProgram.timeUniform = gl.getUniformLocation(shaderProgram, "uTime");
+    shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram.id, "sTexture");
+    shaderProgram.centerPositionUniform = gl.getUniformLocation(shaderProgram.id, "uCenterPosition");
+    shaderProgram.colorUniform = gl.getUniformLocation(shaderProgram.id, "uColor");
+    shaderProgram.timeUniform = gl.getUniformLocation(shaderProgram.id, "uTime");
   }
 
 
   function handleLoadedTexture(texture) {
     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.bindTexture(gl.TEXTURE_2D, texture.id);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -159,7 +157,12 @@
 
   var texture;
   function initTexture() {
-    texture = gl.createTexture();
+    texture = { id: gl.createTexture() };
+    // Setup a single pixel texture to use while we wait for the image to load.
+    gl.bindTexture(gl.TEXTURE_2D, texture.id);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                  new Uint8Array([0, 0, 255, 255]));
+    // Load image asynchronously.
     texture.image = new Image();
     texture.image.onload = function() {
       handleLoadedTexture(texture)
@@ -236,32 +239,32 @@
       }
     }
 
-    pointLifetimesBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointLifetimesBuffer);
+    pointLifetimesBuffer = { id: gl.createBuffer() };
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointLifetimesBuffer.id);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(lifetimes), gl.STATIC_DRAW);
     pointLifetimesBuffer.itemSize = 1;
     pointLifetimesBuffer.numItems = numParticles * 6;
 
-    pointStartPositionsBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointStartPositionsBuffer);
+    pointStartPositionsBuffer = { id: gl.createBuffer() };
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointStartPositionsBuffer.id);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(startPositions), gl.STATIC_DRAW);
     pointStartPositionsBuffer.itemSize = 3;
     pointStartPositionsBuffer.numItems = numParticles * 6;
 
-    pointEndPositionsBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointEndPositionsBuffer);
+    pointEndPositionsBuffer = { id: gl.createBuffer() };
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointEndPositionsBuffer.id);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(endPositions), gl.STATIC_DRAW);
     pointEndPositionsBuffer.itemSize = 3;
     pointEndPositionsBuffer.numItems = numParticles * 6;
 
-    pointOffsetsBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointOffsetsBuffer);
+    pointOffsetsBuffer = { id: gl.createBuffer() };
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointOffsetsBuffer.id);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(offsets), gl.STATIC_DRAW);
     pointOffsetsBuffer.itemSize = 2;
     pointOffsetsBuffer.numItems = numParticles * 6;
 
-    pointTextureCoordsBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointTextureCoordsBuffer);
+    pointTextureCoordsBuffer = { id: gl.createBuffer() };
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointTextureCoordsBuffer.id);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
     pointTextureCoordsBuffer.itemSize = 2;
     pointTextureCoordsBuffer.numItems = numParticles * 6;
@@ -272,30 +275,30 @@
   var centerPos;
   var color;
   function drawScene() {
-    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+    gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointLifetimesBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointLifetimesBuffer.id);
     gl.vertexAttribPointer(shaderProgram.pointLifetimeAttribute, pointLifetimesBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointStartPositionsBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointStartPositionsBuffer.id);
     gl.vertexAttribPointer(shaderProgram.pointStartPositionAttribute, pointStartPositionsBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointEndPositionsBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointEndPositionsBuffer.id);
     gl.vertexAttribPointer(shaderProgram.pointEndPositionAttribute, pointEndPositionsBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointOffsetsBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointOffsetsBuffer.id);
     gl.vertexAttribPointer(shaderProgram.pointOffsetAttribute, pointOffsetsBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-    gl.bindBuffer(gl.ARRAY_BUFFER, pointTextureCoordsBuffer);
+    gl.bindBuffer(gl.ARRAY_BUFFER, pointTextureCoordsBuffer.id);
     gl.vertexAttribPointer(shaderProgram.pointTextureCoordsAttribute, pointTextureCoordsBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE);
 
     gl.activeTexture(gl.TEXTURE0);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.bindTexture(gl.TEXTURE_2D, texture.id);
     gl.uniform1i(shaderProgram.samplerUniform, 0);
 
     gl.uniform3f(shaderProgram.centerPositionUniform, centerPos[0], centerPos[1], centerPos[2]);
@@ -328,6 +331,7 @@
   function tick() {
     animate();
     drawScene();
+    requestAnimationFrame(tick);
   }
 
 
@@ -339,7 +343,7 @@
 
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
-    setInterval(tick, 15);
+    tick();
   }
 
 

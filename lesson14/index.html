@@ -2,9 +2,9 @@
 
 <head>
 <title>Learning WebGL &mdash; lesson 14</title>
-<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta charset="utf-8">
 
-<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="gl-matrix-min.js"></script>
 <script type="text/javascript" src="webgl-utils.js"></script>
 
 <script id="per-fragment-lighting-fs" type="x-shader/x-fragment">
@@ -90,9 +90,7 @@
 
     function initGL(canvas) {
         try {
-            gl = canvas.getContext("experimental-webgl");
-            gl.viewportWidth = canvas.width;
-            gl.viewportHeight = canvas.height;
+            gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
         } catch (e) {
         }
         if (!gl) {
@@ -118,18 +116,18 @@
 
         var shader;
         if (shaderScript.type == "x-shader/x-fragment") {
-            shader = gl.createShader(gl.FRAGMENT_SHADER);
+            shader = { id: gl.createShader(gl.FRAGMENT_SHADER) };
         } else if (shaderScript.type == "x-shader/x-vertex") {
-            shader = gl.createShader(gl.VERTEX_SHADER);
+            shader = { id: gl.createShader(gl.VERTEX_SHADER) };
         } else {
             return null;
         }
 
-        gl.shaderSource(shader, str);
-        gl.compileShader(shader);
+        gl.shaderSource(shader.id, str);
+        gl.compileShader(shader.id);
 
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert(gl.getShaderInfoLog(shader));
+        if (!gl.getShaderParameter(shader.id, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader.id));
             return null;
         }
 
@@ -143,44 +141,44 @@
         var fragmentShader = getShader(gl, "per-fragment-lighting-fs");
         var vertexShader = getShader(gl, "per-fragment-lighting-vs");
 
-        shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
+        shaderProgram = { id: gl.createProgram() };
+        gl.attachShader(shaderProgram.id, vertexShader.id);
+        gl.attachShader(shaderProgram.id, fragmentShader.id);
+        gl.linkProgram(shaderProgram.id);
 
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        if (!gl.getProgramParameter(shaderProgram.id, gl.LINK_STATUS)) {
             alert("Could not initialise shaders");
         }
 
-        gl.useProgram(shaderProgram);
+        gl.useProgram(shaderProgram.id);
 
-        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram.id, "aVertexPosition");
         gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
-        shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
+        shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram.id, "aVertexNormal");
         gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
 
-        shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
+        shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram.id, "aTextureCoord");
         gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
 
-        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-        shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
-        shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
-        shaderProgram.materialShininessUniform = gl.getUniformLocation(shaderProgram, "uMaterialShininess");
-        shaderProgram.showSpecularHighlightsUniform = gl.getUniformLocation(shaderProgram, "uShowSpecularHighlights");
-        shaderProgram.useTexturesUniform = gl.getUniformLocation(shaderProgram, "uUseTextures");
-        shaderProgram.useLightingUniform = gl.getUniformLocation(shaderProgram, "uUseLighting");
-        shaderProgram.ambientColorUniform = gl.getUniformLocation(shaderProgram, "uAmbientColor");
-        shaderProgram.pointLightingLocationUniform = gl.getUniformLocation(shaderProgram, "uPointLightingLocation");
-        shaderProgram.pointLightingSpecularColorUniform = gl.getUniformLocation(shaderProgram, "uPointLightingSpecularColor");
-        shaderProgram.pointLightingDiffuseColorUniform = gl.getUniformLocation(shaderProgram, "uPointLightingDiffuseColor");
+        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram.id, "uPMatrix");
+        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram.id, "uMVMatrix");
+        shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram.id, "uNMatrix");
+        shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram.id, "uSampler");
+        shaderProgram.materialShininessUniform = gl.getUniformLocation(shaderProgram.id, "uMaterialShininess");
+        shaderProgram.showSpecularHighlightsUniform = gl.getUniformLocation(shaderProgram.id, "uShowSpecularHighlights");
+        shaderProgram.useTexturesUniform = gl.getUniformLocation(shaderProgram.id, "uUseTextures");
+        shaderProgram.useLightingUniform = gl.getUniformLocation(shaderProgram.id, "uUseLighting");
+        shaderProgram.ambientColorUniform = gl.getUniformLocation(shaderProgram.id, "uAmbientColor");
+        shaderProgram.pointLightingLocationUniform = gl.getUniformLocation(shaderProgram.id, "uPointLightingLocation");
+        shaderProgram.pointLightingSpecularColorUniform = gl.getUniformLocation(shaderProgram.id, "uPointLightingSpecularColor");
+        shaderProgram.pointLightingDiffuseColorUniform = gl.getUniformLocation(shaderProgram.id, "uPointLightingDiffuseColor");
     }
 
 
     function handleLoadedTexture(texture) {
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.bindTexture(gl.TEXTURE_2D, texture.id);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
@@ -194,14 +192,24 @@
     var galvanizedTexture;
 
     function initTextures() {
-        earthTexture = gl.createTexture();
+        earthTexture = { id: gl.createTexture() };
+        // Setup a single pixel texture to use while we wait for the image to load.
+        gl.bindTexture(gl.TEXTURE_2D, earthTexture.id);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                      new Uint8Array([0, 0, 255, 255]));
+        // Load image asynchronously.
         earthTexture.image = new Image();
         earthTexture.image.onload = function () {
             handleLoadedTexture(earthTexture)
         }
         earthTexture.image.src = "earth.jpg";
 
-        galvanizedTexture = gl.createTexture();
+        galvanizedTexture = { id: gl.createTexture() };
+        // Setup a single pixel texture to use while we wait for the image to load.
+        gl.bindTexture(gl.TEXTURE_2D, galvanizedTexture.id);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                      new Uint8Array([0, 0, 255, 255]));
+        // Load image asynchronously.
         galvanizedTexture.image = new Image();
         galvanizedTexture.image.onload = function () {
             handleLoadedTexture(galvanizedTexture)
@@ -216,7 +224,7 @@
 
     function mvPushMatrix() {
         var copy = mat4.create();
-        mat4.set(mvMatrix, copy);
+        mat4.copy(copy, mvMatrix);
         mvMatrixStack.push(copy);
     }
 
@@ -232,8 +240,9 @@
         gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
 
         var normalMatrix = mat3.create();
-        mat4.toInverseMat3(mvMatrix, normalMatrix);
-        mat3.transpose(normalMatrix);
+        mat3.fromMat4(normalMatrix, mvMatrix);
+        mat3.invert(normalMatrix, normalMatrix);
+        mat3.transpose(normalMatrix, normalMatrix);
         gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
     }
 
@@ -248,26 +257,26 @@
     var teapotVertexIndexBuffer;
 
     function handleLoadedTeapot(teapotData) {
-        teapotVertexNormalBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer);
+        teapotVertexNormalBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer.id);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexNormals), gl.STATIC_DRAW);
         teapotVertexNormalBuffer.itemSize = 3;
         teapotVertexNormalBuffer.numItems = teapotData.vertexNormals.length / 3;
 
-        teapotVertexTextureCoordBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexTextureCoordBuffer);
+        teapotVertexTextureCoordBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexTextureCoordBuffer.id);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexTextureCoords), gl.STATIC_DRAW);
         teapotVertexTextureCoordBuffer.itemSize = 2;
         teapotVertexTextureCoordBuffer.numItems = teapotData.vertexTextureCoords.length / 2;
 
-        teapotVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer);
+        teapotVertexPositionBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer.id);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(teapotData.vertexPositions), gl.STATIC_DRAW);
         teapotVertexPositionBuffer.itemSize = 3;
         teapotVertexPositionBuffer.numItems = teapotData.vertexPositions.length / 3;
 
-        teapotVertexIndexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, teapotVertexIndexBuffer);
+        teapotVertexIndexBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, teapotVertexIndexBuffer.id);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(teapotData.indices), gl.STATIC_DRAW);
         teapotVertexIndexBuffer.itemSize = 1;
         teapotVertexIndexBuffer.numItems = teapotData.indices.length;
@@ -292,14 +301,14 @@
 
 
     function drawScene() {
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         if (teapotVertexPositionBuffer == null || teapotVertexNormalBuffer == null || teapotVertexTextureCoordBuffer == null || teapotVertexIndexBuffer == null) {
             return;
         }
 
-        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+        mat4.perspective(pMatrix, 45, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 100.0);
 
         var specularHighlights = document.getElementById("specular").checked;
         gl.uniform1i(shaderProgram.showSpecularHighlightsUniform, specularHighlights);
@@ -341,30 +350,30 @@
 
         mat4.identity(mvMatrix);
 
-        mat4.translate(mvMatrix, [0, 0, -40]);
-        mat4.rotate(mvMatrix, degToRad(23.4), [1, 0, -1]);
-        mat4.rotate(mvMatrix, degToRad(teapotAngle), [0, 1, 0]);
+        mat4.translate(mvMatrix, mvMatrix, [0, 0, -40]);
+        mat4.rotate(mvMatrix, mvMatrix, degToRad(23.4), [1, 0, -1]);
+        mat4.rotate(mvMatrix, mvMatrix, degToRad(teapotAngle), [0, 1, 0]);
 
         gl.activeTexture(gl.TEXTURE0);
         if (texture == "earth") {
-            gl.bindTexture(gl.TEXTURE_2D, earthTexture);
+            gl.bindTexture(gl.TEXTURE_2D, earthTexture.id);
         } else if (texture == "galvanized") {
-            gl.bindTexture(gl.TEXTURE_2D, galvanizedTexture);
+            gl.bindTexture(gl.TEXTURE_2D, galvanizedTexture.id);
         }
         gl.uniform1i(shaderProgram.samplerUniform, 0);
 
         gl.uniform1f(shaderProgram.materialShininessUniform, parseFloat(document.getElementById("shininess").value));
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexPositionBuffer.id);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, teapotVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexTextureCoordBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexTextureCoordBuffer.id);
         gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, teapotVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, teapotVertexNormalBuffer.id);
         gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, teapotVertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, teapotVertexIndexBuffer);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, teapotVertexIndexBuffer.id);
         setMatrixUniforms();
         gl.drawElements(gl.TRIANGLES, teapotVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
     }

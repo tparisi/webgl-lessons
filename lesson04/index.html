@@ -2,9 +2,9 @@
 
 <head>
 <title>Learning WebGL &mdash; lesson 4</title>
-<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta charset="utf-8">
 
-<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="gl-matrix-min.js"></script>
 <script type="text/javascript" src="webgl-utils.js"></script>
 
 <script id="shader-fs" type="x-shader/x-fragment">
@@ -39,9 +39,7 @@
 
     function initGL(canvas) {
         try {
-            gl = canvas.getContext("experimental-webgl");
-            gl.viewportWidth = canvas.width;
-            gl.viewportHeight = canvas.height;
+            gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
         } catch (e) {
         }
         if (!gl) {
@@ -67,18 +65,18 @@
 
         var shader;
         if (shaderScript.type == "x-shader/x-fragment") {
-            shader = gl.createShader(gl.FRAGMENT_SHADER);
+            shader = { id: gl.createShader(gl.FRAGMENT_SHADER) };
         } else if (shaderScript.type == "x-shader/x-vertex") {
-            shader = gl.createShader(gl.VERTEX_SHADER);
+            shader = { id: gl.createShader(gl.VERTEX_SHADER) };
         } else {
             return null;
         }
 
-        gl.shaderSource(shader, str);
-        gl.compileShader(shader);
+        gl.shaderSource(shader.id, str);
+        gl.compileShader(shader.id);
 
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert(gl.getShaderInfoLog(shader));
+        if (!gl.getShaderParameter(shader.id, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader.id));
             return null;
         }
 
@@ -92,25 +90,25 @@
         var fragmentShader = getShader(gl, "shader-fs");
         var vertexShader = getShader(gl, "shader-vs");
 
-        shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
+        shaderProgram = { id: gl.createProgram() };
+        gl.attachShader(shaderProgram.id, vertexShader.id);
+        gl.attachShader(shaderProgram.id, fragmentShader.id);
+        gl.linkProgram(shaderProgram.id);
 
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        if (!gl.getProgramParameter(shaderProgram.id, gl.LINK_STATUS)) {
             alert("Could not initialise shaders");
         }
 
-        gl.useProgram(shaderProgram);
+        gl.useProgram(shaderProgram.id);
 
-        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram.id, "aVertexPosition");
         gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
-        shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram, "aVertexColor");
+        shaderProgram.vertexColorAttribute = gl.getAttribLocation(shaderProgram.id, "aVertexColor");
         gl.enableVertexAttribArray(shaderProgram.vertexColorAttribute);
 
-        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
+        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram.id, "uPMatrix");
+        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram.id, "uMVMatrix");
     }
 
 
@@ -120,7 +118,7 @@
 
     function mvPushMatrix() {
         var copy = mat4.create();
-        mat4.set(mvMatrix, copy);
+        mat4.copy(copy, mvMatrix);
         mvMatrixStack.push(copy);
     }
 
@@ -150,8 +148,8 @@
     var cubeVertexIndexBuffer;
 
     function initBuffers() {
-        pyramidVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pyramidVertexPositionBuffer);
+        pyramidVertexPositionBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, pyramidVertexPositionBuffer.id);
         var vertices = [
             // Front face
              0.0,  1.0,  0.0,
@@ -177,8 +175,8 @@
         pyramidVertexPositionBuffer.itemSize = 3;
         pyramidVertexPositionBuffer.numItems = 12;
 
-        pyramidVertexColorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pyramidVertexColorBuffer);
+        pyramidVertexColorBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, pyramidVertexColorBuffer.id);
         var colors = [
             // Front face
             1.0, 0.0, 0.0, 1.0,
@@ -205,8 +203,8 @@
         pyramidVertexColorBuffer.numItems = 12;
 
 
-        cubeVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
+        cubeVertexPositionBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer.id);
         vertices = [
             // Front face
             -1.0, -1.0,  1.0,
@@ -248,8 +246,8 @@
         cubeVertexPositionBuffer.itemSize = 3;
         cubeVertexPositionBuffer.numItems = 24;
 
-        cubeVertexColorBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexColorBuffer);
+        cubeVertexColorBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexColorBuffer.id);
         colors = [
             [1.0, 0.0, 0.0, 1.0], // Front face
             [1.0, 1.0, 0.0, 1.0], // Back face
@@ -269,8 +267,8 @@
         cubeVertexColorBuffer.itemSize = 4;
         cubeVertexColorBuffer.numItems = 24;
 
-        cubeVertexIndexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+        cubeVertexIndexBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer.id);
         var cubeVertexIndices = [
             0, 1, 2,      0, 2, 3,    // Front face
             4, 5, 6,      4, 6, 7,    // Back face
@@ -289,22 +287,22 @@
     var rCube = 0;
 
     function drawScene() {
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+        mat4.perspective(pMatrix, 45, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 100.0);
 
         mat4.identity(mvMatrix);
 
-        mat4.translate(mvMatrix, [-1.5, 0.0, -8.0]);
+        mat4.translate(mvMatrix, mvMatrix, [-1.5, 0.0, -8.0]);
 
         mvPushMatrix();
-        mat4.rotate(mvMatrix, degToRad(rPyramid), [0, 1, 0]);
+        mat4.rotate(mvMatrix, mvMatrix, degToRad(rPyramid), [0, 1, 0]);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, pyramidVertexPositionBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, pyramidVertexPositionBuffer.id);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, pyramidVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, pyramidVertexColorBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, pyramidVertexColorBuffer.id);
         gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, pyramidVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         setMatrixUniforms();
@@ -313,18 +311,18 @@
         mvPopMatrix();
 
 
-        mat4.translate(mvMatrix, [3.0, 0.0, 0.0]);
+        mat4.translate(mvMatrix, mvMatrix, [3.0, 0.0, 0.0]);
 
         mvPushMatrix();
-        mat4.rotate(mvMatrix, degToRad(rCube), [1, 1, 1]);
+        mat4.rotate(mvMatrix, mvMatrix, degToRad(rCube), [1, 1, 1]);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer.id);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexColorBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexColorBuffer.id);
         gl.vertexAttribPointer(shaderProgram.vertexColorAttribute, cubeVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer.id);
         setMatrixUniforms();
         gl.drawElements(gl.TRIANGLES, cubeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 

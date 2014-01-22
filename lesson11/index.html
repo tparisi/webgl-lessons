@@ -2,9 +2,9 @@
 
 <head>
 <title>Learning WebGL &mdash; lesson 11</title>
-<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta charset="utf-8">
 
-<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="gl-matrix-min.js"></script>
 <script type="text/javascript" src="webgl-utils.js"></script>
 
 <script id="shader-fs" type="x-shader/x-fragment">
@@ -61,9 +61,7 @@
 
     function initGL(canvas) {
         try {
-            gl = canvas.getContext("experimental-webgl");
-            gl.viewportWidth = canvas.width;
-            gl.viewportHeight = canvas.height;
+            gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
         } catch (e) {
         }
         if (!gl) {
@@ -89,18 +87,18 @@
 
         var shader;
         if (shaderScript.type == "x-shader/x-fragment") {
-            shader = gl.createShader(gl.FRAGMENT_SHADER);
+            shader = { id: gl.createShader(gl.FRAGMENT_SHADER) };
         } else if (shaderScript.type == "x-shader/x-vertex") {
-            shader = gl.createShader(gl.VERTEX_SHADER);
+            shader = { id: gl.createShader(gl.VERTEX_SHADER) };
         } else {
             return null;
         }
 
-        gl.shaderSource(shader, str);
-        gl.compileShader(shader);
+        gl.shaderSource(shader.id, str);
+        gl.compileShader(shader.id);
 
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert(gl.getShaderInfoLog(shader));
+        if (!gl.getShaderParameter(shader.id, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader.id));
             return null;
         }
 
@@ -114,40 +112,40 @@
         var fragmentShader = getShader(gl, "shader-fs");
         var vertexShader = getShader(gl, "shader-vs");
 
-        shaderProgram = gl.createProgram();
-        gl.attachShader(shaderProgram, vertexShader);
-        gl.attachShader(shaderProgram, fragmentShader);
-        gl.linkProgram(shaderProgram);
+        shaderProgram = { id: gl.createProgram() };
+        gl.attachShader(shaderProgram.id, vertexShader.id);
+        gl.attachShader(shaderProgram.id, fragmentShader.id);
+        gl.linkProgram(shaderProgram.id);
 
-        if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
+        if (!gl.getProgramParameter(shaderProgram.id, gl.LINK_STATUS)) {
             alert("Could not initialise shaders");
         }
 
-        gl.useProgram(shaderProgram);
+        gl.useProgram(shaderProgram.id);
 
-        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram, "aVertexPosition");
+        shaderProgram.vertexPositionAttribute = gl.getAttribLocation(shaderProgram.id, "aVertexPosition");
         gl.enableVertexAttribArray(shaderProgram.vertexPositionAttribute);
 
-        shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram, "aTextureCoord");
+        shaderProgram.textureCoordAttribute = gl.getAttribLocation(shaderProgram.id, "aTextureCoord");
         gl.enableVertexAttribArray(shaderProgram.textureCoordAttribute);
 
-        shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram, "aVertexNormal");
+        shaderProgram.vertexNormalAttribute = gl.getAttribLocation(shaderProgram.id, "aVertexNormal");
         gl.enableVertexAttribArray(shaderProgram.vertexNormalAttribute);
 
-        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram, "uPMatrix");
-        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram, "uMVMatrix");
-        shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram, "uNMatrix");
-        shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram, "uSampler");
-        shaderProgram.useLightingUniform = gl.getUniformLocation(shaderProgram, "uUseLighting");
-        shaderProgram.ambientColorUniform = gl.getUniformLocation(shaderProgram, "uAmbientColor");
-        shaderProgram.lightingDirectionUniform = gl.getUniformLocation(shaderProgram, "uLightingDirection");
-        shaderProgram.directionalColorUniform = gl.getUniformLocation(shaderProgram, "uDirectionalColor");
+        shaderProgram.pMatrixUniform = gl.getUniformLocation(shaderProgram.id, "uPMatrix");
+        shaderProgram.mvMatrixUniform = gl.getUniformLocation(shaderProgram.id, "uMVMatrix");
+        shaderProgram.nMatrixUniform = gl.getUniformLocation(shaderProgram.id, "uNMatrix");
+        shaderProgram.samplerUniform = gl.getUniformLocation(shaderProgram.id, "uSampler");
+        shaderProgram.useLightingUniform = gl.getUniformLocation(shaderProgram.id, "uUseLighting");
+        shaderProgram.ambientColorUniform = gl.getUniformLocation(shaderProgram.id, "uAmbientColor");
+        shaderProgram.lightingDirectionUniform = gl.getUniformLocation(shaderProgram.id, "uLightingDirection");
+        shaderProgram.directionalColorUniform = gl.getUniformLocation(shaderProgram.id, "uDirectionalColor");
     }
 
 
     function handleLoadedTexture(texture) {
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.bindTexture(gl.TEXTURE_2D, texture.id);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
@@ -160,7 +158,12 @@
     var moonTexture;
 
     function initTexture() {
-        moonTexture = gl.createTexture();
+        moonTexture = { id: gl.createTexture() };
+        // Setup a single pixel texture to use while we wait for the image to load.
+        gl.bindTexture(gl.TEXTURE_2D, moonTexture.id);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                      new Uint8Array([0, 0, 255, 255]));
+        // Load image asynchronously.
         moonTexture.image = new Image();
         moonTexture.image.onload = function () {
             handleLoadedTexture(moonTexture)
@@ -176,7 +179,7 @@
 
     function mvPushMatrix() {
         var copy = mat4.create();
-        mat4.set(mvMatrix, copy);
+        mat4.copy(copy, mvMatrix);
         mvMatrixStack.push(copy);
     }
 
@@ -192,8 +195,9 @@
         gl.uniformMatrix4fv(shaderProgram.mvMatrixUniform, false, mvMatrix);
 
         var normalMatrix = mat3.create();
-        mat4.toInverseMat3(mvMatrix, normalMatrix);
-        mat3.transpose(normalMatrix);
+        mat3.fromMat4(normalMatrix, mvMatrix);
+        mat3.invert(normalMatrix, normalMatrix);
+        mat3.transpose(normalMatrix, normalMatrix);
         gl.uniformMatrix3fv(shaderProgram.nMatrixUniform, false, normalMatrix);
     }
 
@@ -232,12 +236,12 @@
         var deltaX = newX - lastMouseX
         var newRotationMatrix = mat4.create();
         mat4.identity(newRotationMatrix);
-        mat4.rotate(newRotationMatrix, degToRad(deltaX / 10), [0, 1, 0]);
+        mat4.rotate(newRotationMatrix, newRotationMatrix, degToRad(deltaX / 10), [0, 1, 0]);
 
         var deltaY = newY - lastMouseY;
-        mat4.rotate(newRotationMatrix, degToRad(deltaY / 10), [1, 0, 0]);
+        mat4.rotate(newRotationMatrix, newRotationMatrix, degToRad(deltaY / 10), [1, 0, 0]);
 
-        mat4.multiply(newRotationMatrix, moonRotationMatrix, moonRotationMatrix);
+        mat4.multiply(moonRotationMatrix, newRotationMatrix, moonRotationMatrix);
 
         lastMouseX = newX
         lastMouseY = newY;
@@ -300,26 +304,26 @@
             }
         }
 
-        moonVertexNormalBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexNormalBuffer);
+        moonVertexNormalBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexNormalBuffer.id);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalData), gl.STATIC_DRAW);
         moonVertexNormalBuffer.itemSize = 3;
         moonVertexNormalBuffer.numItems = normalData.length / 3;
 
-        moonVertexTextureCoordBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexTextureCoordBuffer);
+        moonVertexTextureCoordBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexTextureCoordBuffer.id);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordData), gl.STATIC_DRAW);
         moonVertexTextureCoordBuffer.itemSize = 2;
         moonVertexTextureCoordBuffer.numItems = textureCoordData.length / 2;
 
-        moonVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexPositionBuffer);
+        moonVertexPositionBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexPositionBuffer.id);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPositionData), gl.STATIC_DRAW);
         moonVertexPositionBuffer.itemSize = 3;
         moonVertexPositionBuffer.numItems = vertexPositionData.length / 3;
 
-        moonVertexIndexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer);
+        moonVertexIndexBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer.id);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexData), gl.STATIC_DRAW);
         moonVertexIndexBuffer.itemSize = 1;
         moonVertexIndexBuffer.numItems = indexData.length;
@@ -327,10 +331,10 @@
 
 
     function drawScene() {
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+        mat4.perspective(pMatrix, 45, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 100.0);
 
         var lighting = document.getElementById("lighting").checked;
         gl.uniform1i(shaderProgram.useLightingUniform, lighting);
@@ -348,8 +352,8 @@
                 parseFloat(document.getElementById("lightDirectionZ").value)
             ];
             var adjustedLD = vec3.create();
-            vec3.normalize(lightingDirection, adjustedLD);
-            vec3.scale(adjustedLD, -1);
+            vec3.normalize(adjustedLD, lightingDirection);
+            vec3.scale(adjustedLD, adjustedLD, -1);
             gl.uniform3fv(shaderProgram.lightingDirectionUniform, adjustedLD);
 
             gl.uniform3f(
@@ -362,24 +366,24 @@
 
         mat4.identity(mvMatrix);
 
-        mat4.translate(mvMatrix, [0, 0, -6]);
+        mat4.translate(mvMatrix, mvMatrix, [0, 0, -6]);
 
-        mat4.multiply(mvMatrix, moonRotationMatrix);
+        mat4.multiply(mvMatrix, mvMatrix, moonRotationMatrix);
 
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, moonTexture);
+        gl.bindTexture(gl.TEXTURE_2D, moonTexture.id);
         gl.uniform1i(shaderProgram.samplerUniform, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexPositionBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexPositionBuffer.id);
         gl.vertexAttribPointer(shaderProgram.vertexPositionAttribute, moonVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexTextureCoordBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexTextureCoordBuffer.id);
         gl.vertexAttribPointer(shaderProgram.textureCoordAttribute, moonVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexNormalBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexNormalBuffer.id);
         gl.vertexAttribPointer(shaderProgram.vertexNormalAttribute, moonVertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer.id);
         setMatrixUniforms();
         gl.drawElements(gl.TRIANGLES, moonVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
     }

@@ -2,9 +2,9 @@
 
 <head>
 <title>Learning WebGL &mdash; lesson 13</title>
-<meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+<meta charset="utf-8">
 
-<script type="text/javascript" src="glMatrix-0.9.5.min.js"></script>
+<script type="text/javascript" src="gl-matrix-min.js"></script>
 <script type="text/javascript" src="webgl-utils.js"></script>
 
 <script id="per-vertex-lighting-fs" type="x-shader/x-fragment">
@@ -133,9 +133,7 @@
 
     function initGL(canvas) {
         try {
-            gl = canvas.getContext("experimental-webgl");
-            gl.viewportWidth = canvas.width;
-            gl.viewportHeight = canvas.height;
+            gl = canvas.getContext("webgl") || canvas.getContext("experimental-webgl");
         } catch (e) {
         }
         if (!gl) {
@@ -161,18 +159,18 @@
 
         var shader;
         if (shaderScript.type == "x-shader/x-fragment") {
-            shader = gl.createShader(gl.FRAGMENT_SHADER);
+            shader = { id: gl.createShader(gl.FRAGMENT_SHADER) };
         } else if (shaderScript.type == "x-shader/x-vertex") {
-            shader = gl.createShader(gl.VERTEX_SHADER);
+            shader = { id: gl.createShader(gl.VERTEX_SHADER) };
         } else {
             return null;
         }
 
-        gl.shaderSource(shader, str);
-        gl.compileShader(shader);
+        gl.shaderSource(shader.id, str);
+        gl.compileShader(shader.id);
 
-        if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-            alert(gl.getShaderInfoLog(shader));
+        if (!gl.getShaderParameter(shader.id, gl.COMPILE_STATUS)) {
+            alert(gl.getShaderInfoLog(shader.id));
             return null;
         }
 
@@ -185,33 +183,33 @@
         var fragmentShader = getShader(gl, fragmentShaderID);
         var vertexShader = getShader(gl, vertexShaderID);
 
-        var program = gl.createProgram();
-        gl.attachShader(program, vertexShader);
-        gl.attachShader(program, fragmentShader);
-        gl.linkProgram(program);
+        var program = { id: gl.createProgram() };
+        gl.attachShader(program.id, vertexShader.id);
+        gl.attachShader(program.id, fragmentShader.id);
+        gl.linkProgram(program.id);
 
-        if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
+        if (!gl.getProgramParameter(program.id, gl.LINK_STATUS)) {
             alert("Could not initialise shaders");
         }
 
-        program.vertexPositionAttribute = gl.getAttribLocation(program, "aVertexPosition");
+        program.vertexPositionAttribute = gl.getAttribLocation(program.id, "aVertexPosition");
         gl.enableVertexAttribArray(program.vertexPositionAttribute);
 
-        program.vertexNormalAttribute = gl.getAttribLocation(program, "aVertexNormal");
+        program.vertexNormalAttribute = gl.getAttribLocation(program.id, "aVertexNormal");
         gl.enableVertexAttribArray(program.vertexNormalAttribute);
 
-        program.textureCoordAttribute = gl.getAttribLocation(program, "aTextureCoord");
+        program.textureCoordAttribute = gl.getAttribLocation(program.id, "aTextureCoord");
         gl.enableVertexAttribArray(program.textureCoordAttribute);
 
-        program.pMatrixUniform = gl.getUniformLocation(program, "uPMatrix");
-        program.mvMatrixUniform = gl.getUniformLocation(program, "uMVMatrix");
-        program.nMatrixUniform = gl.getUniformLocation(program, "uNMatrix");
-        program.samplerUniform = gl.getUniformLocation(program, "uSampler");
-        program.useTexturesUniform = gl.getUniformLocation(program, "uUseTextures");
-        program.useLightingUniform = gl.getUniformLocation(program, "uUseLighting");
-        program.ambientColorUniform = gl.getUniformLocation(program, "uAmbientColor");
-        program.pointLightingLocationUniform = gl.getUniformLocation(program, "uPointLightingLocation");
-        program.pointLightingColorUniform = gl.getUniformLocation(program, "uPointLightingColor");
+        program.pMatrixUniform = gl.getUniformLocation(program.id, "uPMatrix");
+        program.mvMatrixUniform = gl.getUniformLocation(program.id, "uMVMatrix");
+        program.nMatrixUniform = gl.getUniformLocation(program.id, "uNMatrix");
+        program.samplerUniform = gl.getUniformLocation(program.id, "uSampler");
+        program.useTexturesUniform = gl.getUniformLocation(program.id, "uUseTextures");
+        program.useLightingUniform = gl.getUniformLocation(program.id, "uUseLighting");
+        program.ambientColorUniform = gl.getUniformLocation(program.id, "uAmbientColor");
+        program.pointLightingLocationUniform = gl.getUniformLocation(program.id, "uPointLightingLocation");
+        program.pointLightingColorUniform = gl.getUniformLocation(program.id, "uPointLightingColor");
 
         return program;
     }
@@ -229,7 +227,7 @@
 
     function handleLoadedTexture(texture) {
         gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
-        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.bindTexture(gl.TEXTURE_2D, texture.id);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
@@ -243,14 +241,24 @@
     var crateTexture;
 
     function initTextures() {
-        moonTexture = gl.createTexture();
+        moonTexture = { id: gl.createTexture() };
+        // Setup a single pixel texture to use while we wait for the image to load.
+        gl.bindTexture(gl.TEXTURE_2D, moonTexture.id);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                      new Uint8Array([0, 0, 255, 255]));
+        // Load image asynchronously.
         moonTexture.image = new Image();
         moonTexture.image.onload = function () {
             handleLoadedTexture(moonTexture)
         }
         moonTexture.image.src = "moon.gif";
 
-        crateTexture = gl.createTexture();
+        crateTexture = { id: gl.createTexture() };
+        // Setup a single pixel texture to use while we wait for the image to load.
+        gl.bindTexture(gl.TEXTURE_2D, crateTexture.id);
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+                      new Uint8Array([0, 0, 255, 255]));
+        // Load image asynchronously.
         crateTexture.image = new Image();
         crateTexture.image.onload = function () {
             handleLoadedTexture(crateTexture)
@@ -265,7 +273,7 @@
 
     function mvPushMatrix() {
         var copy = mat4.create();
-        mat4.set(mvMatrix, copy);
+        mat4.copy(copy, mvMatrix);
         mvMatrixStack.push(copy);
     }
 
@@ -281,8 +289,9 @@
         gl.uniformMatrix4fv(currentProgram.mvMatrixUniform, false, mvMatrix);
 
         var normalMatrix = mat3.create();
-        mat4.toInverseMat3(mvMatrix, normalMatrix);
-        mat3.transpose(normalMatrix);
+        mat3.fromMat4(normalMatrix, mvMatrix);
+        mat3.invert(normalMatrix, normalMatrix);
+        mat3.transpose(normalMatrix, normalMatrix);
         gl.uniformMatrix3fv(currentProgram.nMatrixUniform, false, normalMatrix);
     }
 
@@ -302,8 +311,8 @@
     var moonVertexTextureCoordBuffer;
     var moonVertexIndexBuffer;
     function initBuffers() {
-        cubeVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
+        cubeVertexPositionBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer.id);
         vertices = [
             // Front face
             -1.0, -1.0,  1.0,
@@ -345,8 +354,8 @@
         cubeVertexPositionBuffer.itemSize = 3;
         cubeVertexPositionBuffer.numItems = 24;
 
-        cubeVertexNormalBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexNormalBuffer);
+        cubeVertexNormalBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexNormalBuffer.id);
         var vertexNormals = [
             // Front face
              0.0,  0.0,  1.0,
@@ -388,8 +397,8 @@
         cubeVertexNormalBuffer.itemSize = 3;
         cubeVertexNormalBuffer.numItems = 24;
 
-        cubeVertexTextureCoordBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
+        cubeVertexTextureCoordBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer.id);
         var textureCoords = [
             // Front face
             0.0, 0.0,
@@ -431,8 +440,8 @@
         cubeVertexTextureCoordBuffer.itemSize = 2;
         cubeVertexTextureCoordBuffer.numItems = 24;
 
-        cubeVertexIndexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+        cubeVertexIndexBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer.id);
         var cubeVertexIndices = [
             0, 1, 2,      0, 2, 3,    // Front face
             4, 5, 6,      4, 6, 7,    // Back face
@@ -495,26 +504,26 @@
             }
         }
 
-        moonVertexNormalBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexNormalBuffer);
+        moonVertexNormalBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexNormalBuffer.id);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(normalData), gl.STATIC_DRAW);
         moonVertexNormalBuffer.itemSize = 3;
         moonVertexNormalBuffer.numItems = normalData.length / 3;
 
-        moonVertexTextureCoordBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexTextureCoordBuffer);
+        moonVertexTextureCoordBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexTextureCoordBuffer.id);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordData), gl.STATIC_DRAW);
         moonVertexTextureCoordBuffer.itemSize = 2;
         moonVertexTextureCoordBuffer.numItems = textureCoordData.length / 2;
 
-        moonVertexPositionBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexPositionBuffer);
+        moonVertexPositionBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexPositionBuffer.id);
         gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexPositionData), gl.STATIC_DRAW);
         moonVertexPositionBuffer.itemSize = 3;
         moonVertexPositionBuffer.numItems = vertexPositionData.length / 3;
 
-        moonVertexIndexBuffer = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer);
+        moonVertexIndexBuffer = { id: gl.createBuffer() };
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer.id);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(indexData), gl.STREAM_DRAW);
         moonVertexIndexBuffer.itemSize = 1;
         moonVertexIndexBuffer.numItems = indexData.length;
@@ -525,10 +534,10 @@
     var cubeAngle = 0;
 
     function drawScene() {
-        gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+        gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix);
+        mat4.perspective(pMatrix, 45, gl.canvas.clientWidth / gl.canvas.clientHeight, 0.1, 100.0);
 
         var perFragmentLighting = document.getElementById("per-fragment").checked;
         if (perFragmentLighting) {
@@ -536,7 +545,7 @@
         } else {
             currentProgram = perVertexProgram;
         }
-        gl.useProgram(currentProgram);
+        gl.useProgram(currentProgram.id);
 
         var lighting = document.getElementById("lighting").checked;
         gl.uniform1i(currentProgram.useLightingUniform, lighting);
@@ -568,49 +577,49 @@
 
         mat4.identity(mvMatrix);
 
-        mat4.translate(mvMatrix, [0, 0, -5]);
+        mat4.translate(mvMatrix, mvMatrix, [0, 0, -5]);
 
-        mat4.rotate(mvMatrix, degToRad(30), [1, 0, 0]);
+        mat4.rotate(mvMatrix, mvMatrix, degToRad(30), [1, 0, 0]);
 
         mvPushMatrix();
-        mat4.rotate(mvMatrix, degToRad(moonAngle), [0, 1, 0]);
-        mat4.translate(mvMatrix, [2, 0, 0]);
+        mat4.rotate(mvMatrix, mvMatrix, degToRad(moonAngle), [0, 1, 0]);
+        mat4.translate(mvMatrix, mvMatrix, [2, 0, 0]);
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, moonTexture);
+        gl.bindTexture(gl.TEXTURE_2D, moonTexture.id);
         gl.uniform1i(currentProgram.samplerUniform, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexPositionBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexPositionBuffer.id);
         gl.vertexAttribPointer(currentProgram.vertexPositionAttribute, moonVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexTextureCoordBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexTextureCoordBuffer.id);
         gl.vertexAttribPointer(currentProgram.textureCoordAttribute, moonVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexNormalBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, moonVertexNormalBuffer.id);
         gl.vertexAttribPointer(currentProgram.vertexNormalAttribute, moonVertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, moonVertexIndexBuffer.id);
         setMatrixUniforms();
         gl.drawElements(gl.TRIANGLES, moonVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
         mvPopMatrix();
 
 
         mvPushMatrix();
-        mat4.rotate(mvMatrix, degToRad(cubeAngle), [0, 1, 0]);
-        mat4.translate(mvMatrix, [1.25, 0, 0]);
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
+        mat4.rotate(mvMatrix, mvMatrix, degToRad(cubeAngle), [0, 1, 0]);
+        mat4.translate(mvMatrix, mvMatrix, [1.25, 0, 0]);
+        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer.id);
         gl.vertexAttribPointer(currentProgram.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexNormalBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexNormalBuffer.id);
         gl.vertexAttribPointer(currentProgram.vertexNormalAttribute, cubeVertexNormalBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
-        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
+        gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer.id);
         gl.vertexAttribPointer(currentProgram.textureCoordAttribute, cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
 
         gl.activeTexture(gl.TEXTURE0);
-        gl.bindTexture(gl.TEXTURE_2D, crateTexture);
+        gl.bindTexture(gl.TEXTURE_2D, crateTexture.id);
         gl.uniform1i(currentProgram.samplerUniform, 0);
 
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer.id);
         setMatrixUniforms();
         gl.drawElements(gl.TRIANGLES, cubeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
         mvPopMatrix();
