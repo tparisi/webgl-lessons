@@ -118,3 +118,13 @@ If the syntax is OK then restart Apache:
 
 Now you can open the webgl-lessons in any local browser at this url:
 <http://webgl-lessons.local/>
+
+The simple way
+~~~~~~~~~~~~
+
+Albeit a little slower, one can use Python's SimpleHTTPServer like so
+
+python -m SimpleHTTPServer 9090
+
+Now you can open the webgl-lessons in any browser like so
+http://<your-ip>:9090
