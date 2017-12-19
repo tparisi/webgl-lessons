@@ -50,7 +50,7 @@ without thinking about it).  Still, if you want to do this:
  * Firefox: set the security.fileuri.strict_origin_policy setting in
    about: config to "false".
 
- * Chrome: use the the --allow-file-access-from-files and
+ * Chrome: use the --allow-file-access-from-files and
    --disable-web-security switches command-line options (ideally just the
    first).  If you're using a Mac, Stuart Carnie has written a convenient
    application bundle for this here:
