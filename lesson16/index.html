@@ -616,7 +616,7 @@
         gl.viewport(0, 0, rttFramebuffer.width, rttFramebuffer.height);
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-        mat4.perspective(45, laptopScreenAspectRatio, 0.1, 100.0, pMatrix);
+        mat4.perspective(pMatrix, glMatrix.toRadian(45.0), laptopScreenAspectRatio, 0.1, 100.0);
 
         gl.uniform1i(shaderProgram.showSpecularHighlightsUniform, false);
         gl.uniform3f(shaderProgram.ambientLightingColorUniform, 0.2, 0.2, 0.2);

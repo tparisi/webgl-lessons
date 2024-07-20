@@ -533,7 +533,7 @@
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         // Update: mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix); mat4.perspective() API has changed.
-        mat4.perspective (pMatrix, 45.0, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+        mat4.perspective (pMatrix, glMatrix.toRadian(45.0), gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 
         var perFragmentLighting = document.getElementById("per-fragment").checked;
         if (perFragmentLighting) {
@@ -574,9 +574,8 @@
         mat4.identity(mvMatrix);
 
         // Update: mat4.translate(mvMatrix, [0, 0, -5]); mat4.translate() API has changed to mat4.translate(out, a, v)
-        // where out is the receiving matrix, a is the matrix to translate, and v is the vector to translate by. z and
-        // DOM element "lightPositionZ" altered to approximate original scene.
-        mat4.translate(mvMatrix, mvMatrix, [0, 0, -3.9]);
+        // where out is the receiving matrix, a is the matrix to translate, and v is the vector to translate by.
+        mat4.translate(mvMatrix, mvMatrix, [0, 0, -5]);
 
         // Update: mat4.rotate(mvMatrix, degToRad(30), [1, 0, 0]); mat4.rotate() API has changed to mat4.rotate(out, a, rad, axis)
         // where out is the receiving matrix and a is the matrix to rotate.
@@ -685,7 +684,7 @@
             <td><b>Location:</b>
             <td>X: <input type="text" id="lightPositionX" value="0.0" />
             <td>Y: <input type="text" id="lightPositionY" value="0.0" />
-            <td>Z: <input type="text" id="lightPositionZ" value="-3.9" />
+            <td>Z: <input type="text" id="lightPositionZ" value="-5.0" />
         </tr>
         <tr>
             <td><b>Colour:</b>

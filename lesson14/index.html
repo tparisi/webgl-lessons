@@ -304,7 +304,7 @@
         }
 
         // Update: mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix); mat4.perspective() API has changed.
-        mat4.perspective (pMatrix, 45.0, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+        mat4.perspective (pMatrix, glMatrix.toRadian(45.0), gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 
         var specularHighlights = document.getElementById("specular").checked;
         gl.uniform1i(shaderProgram.showSpecularHighlightsUniform, specularHighlights);
@@ -347,9 +347,8 @@
         mat4.identity(mvMatrix);
 
         // Update: mat4.translate(mvMatrix, [0, 0, -40]); mat4.translate() API has changed to mat4.translate(out, a, v)
-        // where out is the receiving matrix, a is the matrix to translate, and v is the vector to translate by. z and
-        // DOM element "lightPositionZ" altered to approximate original scene.
-        mat4.translate(mvMatrix, mvMatrix, [0, 0, -32]);
+        // where out is the receiving matrix, a is the matrix to translate, and v is the vector to translate by.
+        mat4.translate(mvMatrix, mvMatrix, [0, 0, -40]);
         // Update: mat4.rotate(mvMatrix, degToRad(23.4), [1, 0, -1]); mat4.rotate() API has changed to mat4.rotate(out, a, rad, axis)
         // where out is the receiving matrix and a is the matrix to rotate.
         mat4.rotate(mvMatrix, mvMatrix, degToRad(23.4), [1, 0, -1]);
@@ -467,7 +466,7 @@
             <td><b>Location:</b>
             <td>X: <input type="text" id="lightPositionX" value="-10.0" />
             <td>Y: <input type="text" id="lightPositionY" value="4.0" />
-            <td>Z: <input type="text" id="lightPositionZ" value="-16.0" />
+            <td>Z: <input type="text" id="lightPositionZ" value="-20.0" />
         </tr>
         <tr>
             <td><b>Specular colour:</b>

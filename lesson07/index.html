@@ -416,7 +416,7 @@
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
         // Update: mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix); mat4.perspective() API has changed.
-        mat4.perspective (pMatrix, 45.0, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+        mat4.perspective (pMatrix, glMatrix.toRadian(45.0), gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 
         mat4.identity(mvMatrix);
 

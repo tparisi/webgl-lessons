@@ -492,12 +492,11 @@
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // Update: mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, pMatrix); mat4.perspective() API has changed.
-    mat4.perspective (pMatrix, 45.0, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
+    mat4.perspective (pMatrix, glMatrix.toRadian(45.0), gl.viewportWidth / gl.viewportHeight, 0.1, 100.0);
 
     // Update: mat4.translate(mvMatrix, [0, 0, -6]); mat4.translate() API has changed to mat4.translate(out, a, v)
-    // where out is the receiving matrix, a is the matrix to translate, and v is the vector to translate by. z altered to
-    // approximate original scene.
-    mat4.translate(mvMatrix, mvMatrix, [0, 0, -4.7]);
+    // where out is the receiving matrix, a is the matrix to translate, and v is the vector to translate by.
+    mat4.translate(mvMatrix, mvMatrix, [0, 0, -6]);
 
     for (var i in cubes) {
       cubes[i].draw();
