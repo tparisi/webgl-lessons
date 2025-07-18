@@ -1,3 +1,3 @@
 Bhumi
 India
-Meta Front-End Certification
+Meta Front-End Developer
